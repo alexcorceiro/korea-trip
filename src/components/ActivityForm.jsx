@@ -1,6 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 
+/** --- Helpers image & URL --- **/
+const isValidUrl = (url) => {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+};
+
+const isImageUrl = (url) => {
+  if (!isValidUrl(url)) return false;
+  const pathname = url.split("?")[0].toLowerCase();
+  return /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(pathname);
+};
+
+/** --- Données constantes --- **/
 const CATEGORIES = [
   "Culture",
   "Découverte",
@@ -14,9 +31,9 @@ const CATEGORIES = [
 const SLOTS = ["Matin", "Après-midi", "Soirée", "Journée"];
 
 export default function ActivityForm({
-  value,            // objet contrôlé (optionnel)
-  onChange,         // setter contrôlé (optionnel)
-  onSubmit,         // (payload)=>Promise|void
+  value,
+  onChange,
+  onSubmit,
   submitting = false,
   initial = null,
 }) {
@@ -26,7 +43,7 @@ export default function ActivityForm({
     neighborhood: initial?.neighborhood || "",
     address: initial?.address || "",
     image: initial?.image || "",
-    googleUrl: initial?.googleUrl || "",   // ⬅️ URL complète Google Maps
+    googleUrl: initial?.googleUrl || "",
     rating: initial?.rating ?? "",
     averagePriceKrw: initial?.averagePriceKrw ?? "",
     reservationRequired: !!initial?.reservationRequired,
@@ -40,36 +57,57 @@ export default function ActivityForm({
 
   const title = initial ? "Modifier l’activité" : "Nouvelle activité";
 
-  // Validations légères et souples
+  /** --- VALIDATION --- **/
   const errors = useMemo(() => {
     const list = [];
     if (!form.name.trim()) list.push("Le nom est requis.");
     if (!CATEGORIES.includes(form.category)) list.push("Catégorie invalide.");
     if (form.rating !== "" && (Number(form.rating) < 0 || Number(form.rating) > 5))
       list.push("La note doit être entre 0 et 5.");
+
+    // 🔍 Validation Google Maps
     if (form.googleUrl) {
       const ok =
         /^https:\/\/www\.google\.com\/maps\//.test(form.googleUrl) ||
         /^https:\/\/maps\.app\.goo\.gl\//.test(form.googleUrl);
-      if (!ok) list.push("Colle une URL Google Maps valide (google.com/maps ou maps.app.goo.gl).");
+      if (!ok)
+        list.push("Colle une URL Google Maps valide (google.com/maps ou maps.app.goo.gl).");
     }
+
+    // 🖼️ Validation image
+    if (form.image) {
+      if (!isImageUrl(form.image)) {
+        list.push(
+          "L’URL d’image doit être un lien direct vers un fichier .jpg, .jpeg, .png, .webp, .gif, .bmp ou .svg."
+        );
+      }
+    }
+
     return list;
   }, [form]);
 
-  // Bulle d’aide “URL Google”
-  const [showHint, setShowHint] = useState(false);
-
-  // Mini aperçu image
+  /** --- Aperçu image --- **/
   const [imgOk, setImgOk] = useState(null);
   useEffect(() => {
-    if (!form.image) { setImgOk(null); return; }
+    if (!form.image) {
+      setImgOk(null);
+      return;
+    }
+    if (!isImageUrl(form.image)) {
+      setImgOk(false);
+      return;
+    }
+
     const img = new Image();
     img.onload = () => setImgOk(true);
     img.onerror = () => setImgOk(false);
     img.src = form.image;
   }, [form.image]);
 
-  // Ouvrir Maps
+  /** --- Bulle d’aide Google Maps --- **/
+  const [showHint, setShowHint] = useState(false);
+
+  /** --- Fonctions utilitaires --- **/
   const tryOpenMaps = () => {
     if (form.googleUrl) {
       window.open(form.googleUrl, "_blank", "noopener");
@@ -79,7 +117,6 @@ export default function ActivityForm({
     }
   };
 
-  // Coller depuis presse-papiers
   const pasteFromClipboard = async () => {
     try {
       const txt = await navigator.clipboard.readText();
@@ -91,19 +128,30 @@ export default function ActivityForm({
     }
   };
 
+  /** --- Soumission --- **/
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (errors.length) {
       toast.error(errors[0]);
       return;
     }
+
     try {
       const payload = {
         ...form,
         rating: form.rating === "" ? null : Number(form.rating),
-        averagePriceKrw: form.averagePriceKrw === "" ? null : Number(form.averagePriceKrw),
+        averagePriceKrw:
+          form.averagePriceKrw === "" ? null : Number(form.averagePriceKrw),
       };
+
+      // 🔁 Nettoyage : si image invalide, on la vide
+      if (payload.image && !isImageUrl(payload.image)) {
+        toast.warn("L’URL d’image est invalide, elle a été ignorée.");
+        payload.image = "";
+      }
+
       await onSubmit(payload);
+
       if (!initial && !value) {
         setForm((f) => ({
           ...f,
@@ -119,18 +167,20 @@ export default function ActivityForm({
           reservationRequired: false,
         }));
       }
+      toast.success("Activité enregistrée ✅");
     } catch (e2) {
       toast.error(e2?.message || "Erreur lors de l’enregistrement.");
     }
   };
 
+  /** --- Rendu --- **/
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
-      {/* Si la page parente n’a pas déjà un ToastContainer */}
       <ToastContainer position="top-center" autoClose={1600} theme="dark" pauseOnHover={false} />
 
       <h3 style={{ margin: 0 }}>{title}</h3>
 
+      {/* Nom */}
       <label style={styles.row}>
         <span>Nom *</span>
         <input
@@ -142,6 +192,7 @@ export default function ActivityForm({
         />
       </label>
 
+      {/* Catégorie */}
       <label style={styles.row}>
         <span>Catégorie *</span>
         <select
@@ -150,11 +201,14 @@ export default function ActivityForm({
           style={styles.input}
         >
           {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>
+              {c}
+            </option>
           ))}
         </select>
       </label>
 
+      {/* Quartier / Adresse */}
       <div style={styles.grid}>
         <label style={styles.row}>
           <span>Quartier</span>
@@ -176,38 +230,53 @@ export default function ActivityForm({
         </label>
       </div>
 
+      {/* Image */}
       <div style={styles.grid}>
         <label style={styles.row}>
-          <span>Image (URL)</span>
+          <span>Image (URL directe)</span>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               value={form.image}
               onChange={(e) => set("image", e.target.value)}
               style={{ ...styles.input, flex: 1 }}
-              placeholder="https://…jpg"
+              placeholder="https://…jpg / .png / .webp"
             />
             <button
               type="button"
-              onClick={() => form.image ? toast.success("Image chargée (voir aperçu) 👍") : toast.info("Aucune URL")}
+              onClick={() =>
+                form.image
+                  ? toast.success("Image testée (voir aperçu) 👍")
+                  : toast.info("Aucune URL")
+              }
               style={styles.btnGhost}
               title="Tester l’image"
             >
               Tester
             </button>
           </div>
-          {/* mini preview */}
           <div style={{ marginTop: 8 }}>
             {imgOk === true && (
               <img
                 src={form.image}
                 alt="preview"
-                style={{ width: 140, height: 90, objectFit: "cover", borderRadius: 8, border: "1px solid #1f2633" }}
+                style={{
+                  width: 140,
+                  height: 90,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  border: "1px solid #1f2633",
+                }}
               />
             )}
-            {imgOk === false && <span style={{ color: "#f87171" }}>Impossible de charger l’image.</span>}
+            {imgOk === false && (
+              <span style={{ color: "#f87171" }}>
+                Impossible de charger l’image (vérifie le lien).
+              </span>
+            )}
           </div>
         </label>
 
+        {/* Google URL */}
         <label style={styles.row}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             URL Google Maps
@@ -216,46 +285,46 @@ export default function ActivityForm({
               title="Aide"
               style={styles.infoDot}
               role="button"
-              aria-label="Aide Google"
             >
               i
             </i>
           </span>
 
           <div style={{ position: "relative" }}>
-            {/* type=url + acceptation des très longues URL */}
             <input
               type="url"
               value={form.googleUrl}
               onChange={(e) => set("googleUrl", e.target.value)}
-              placeholder="Colle ici l’URL complète (ex: https://www.google.com/maps/place/Bukchon+Hanok+Village/... )"
+              placeholder="https://www.google.com/maps/place/…"
               style={{ ...styles.input, paddingRight: 144, wordBreak: "break-all" }}
             />
             <div style={styles.actionsRight}>
-              <button type="button" onClick={pasteFromClipboard} style={styles.smallBtn} title="Coller">
+              <button type="button" onClick={pasteFromClipboard} style={styles.smallBtn}>
                 Coller
               </button>
-              <button type="button" onClick={tryOpenMaps} style={styles.smallBtn} title="Ouvrir Maps">
+              <button type="button" onClick={tryOpenMaps} style={styles.smallBtn}>
                 Maps
               </button>
             </div>
 
             {showHint && (
               <div style={styles.hint}>
-                <strong>Colle l’URL Google Maps complète</strong><br />
-                Exemple :<br />
+                <strong>Colle l’URL Google Maps complète</strong>
+                <br />
+                Exemple :
+                <br />
                 <code style={{ opacity: 0.9 }}>
-                  https://www.google.com/maps/place/Bukchon+Hanok+Village/…
-                </code><br />
+                  https://www.google.com/maps/place/Bukchon+Hanok+Village/
+                </code>
+                <br />
                 (Les liens <code>https://maps.app.goo.gl/…</code> sont aussi acceptés.)
-                <br /><br />
-                Le bouton « Maps » ouvrira exactement cette page.
               </div>
             )}
           </div>
         </label>
       </div>
 
+      {/* Note / Prix */}
       <div style={styles.grid}>
         <label style={styles.row}>
           <span>Note (0–5)</span>
@@ -283,6 +352,7 @@ export default function ActivityForm({
         </label>
       </div>
 
+      {/* Créneau + réservation */}
       <div style={styles.grid}>
         <label style={styles.row}>
           <span>Créneau conseillé</span>
@@ -292,21 +362,24 @@ export default function ActivityForm({
             style={styles.input}
           >
             <option value="">—</option>
-            {SLOTS.map((s) => <option key={s} value={s}>{s}</option>)}
+            {SLOTS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
         </label>
-        <div />
+        <label style={{ ...styles.row, alignItems: "center", gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={!!form.reservationRequired}
+            onChange={(e) => set("reservationRequired", e.target.checked)}
+          />
+          <span>Réservation nécessaire</span>
+        </label>
       </div>
 
-      <label style={{ ...styles.row, alignItems: "center", gap: 8 }}>
-        <input
-          type="checkbox"
-          checked={!!form.reservationRequired}
-          onChange={(e) => set("reservationRequired", e.target.checked)}
-        />
-        <span>Réservation nécessaire</span>
-      </label>
-
+      {/* Notes */}
       <label style={styles.row}>
         <span>Notes</span>
         <textarea
@@ -318,16 +391,24 @@ export default function ActivityForm({
         />
       </label>
 
-      {errors.length > 0 && <p style={{ color: "#f87171", margin: 0 }}>{errors[0]}</p>}
+      {errors.length > 0 && (
+        <p style={{ color: "#f87171", margin: 0 }}>{errors[0]}</p>
+      )}
 
+      {/* Boutons */}
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
         <button type="submit" disabled={submitting} style={styles.primaryBtn}>
-          {submitting ? "Enregistrement…" : initial ? "Enregistrer" : "Ajouter au catalogue"}
+          {submitting
+            ? "Enregistrement…"
+            : initial
+            ? "Enregistrer"
+            : "Ajouter au catalogue"}
         </button>
         <button
           type="button"
           onClick={() =>
-            navigator.clipboard.writeText(JSON.stringify(form, null, 2))
+            navigator.clipboard
+              .writeText(JSON.stringify(form, null, 2))
               .then(() => toast.success("Brouillon copié ✅"))
               .catch(() => toast.error("Copie impossible"))
           }
@@ -340,6 +421,7 @@ export default function ActivityForm({
   );
 }
 
+/** --- STYLES --- **/
 const styles = {
   form: {
     display: "grid",
