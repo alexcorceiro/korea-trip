@@ -1,0 +1,206 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root { color-scheme: dark; }
+
+html, body, #root {
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  background: #0b0e12; overflow-x: hidden;
+}
+
+/* Optionnel, améliore le rendu dark natif */
+:root { color-scheme: dark; }
+
+/* Ton conteneur appli (évite les bords clairs) */
+.app {
+  min-height: 100dvh;
+  background: #0b0e12;  /* 🔥 même fond que html/body */
+  color: #e8ecf3;
+  padding-bottom: 90px; /* place pour FAB/bottom nav si besoin */
+}
+
+/* Header sticky (pas transparent) */
+.header { position: sticky; top: 0; z-index: 20; background: rgba(11,14,18,.94); border-bottom: 1px solid #1f2633;  }
+
+
+/* Cartes internes (ok d’avoir des angles arrondis ici) */
+.card {
+  background: #11151e;
+  border: 1px solid #1f2633;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+
+/* Grille de contenu */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+/* Boutons utiles */
+.btn-ghost {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid #1f2633;
+  color: #e8ecf3;
+}
+
+/* Chips/actions rapides */
+.chip {
+  border: 1px solid #1f2633;
+  background: #11151e;
+  color: #e8ecf3;
+  padding: 10px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* FAB */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 56px;      /* largeur */
+  height: 56px;     /* hauteur */
+  padding: 0;       /* 🔥 ici tu peux ajuster le padding interne */
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: #7dd3fc;
+  color: #0b0e12;
+  font-size: 28px;
+  font-weight: 900;
+  box-shadow: 0 14px 30px rgba(125, 211, 252, .35);
+}
+/* Popover menus (burger / avatar) */
+.popover {
+  position: absolute;
+  background: #11151e;
+  border: 1px solid #1f2633;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+.popover-item {
+  display: block; width: 100%; padding: 12px 14px;
+  text-align: left; color: #e8ecf3; text-decoration: none;
+  background: transparent; border: 0; border-bottom: 1px solid #1f2633;
+}
+.popover-item:last-child { border-bottom: 0; }
+
+/* Sécurité iOS (encoches) si besoin */
+.safe {
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+/* Conteneur appli */
+.app { min-height: 100dvh; background:#0b0e12; color:#e8ecf3; }
+
+/* Grille de contenu */
+.container {
+  width: 100%;
+  max-width: 100%;     /* 🔥 pas de marge latérale sur mobile */
+  padding: 12px;
+  margin: 0 auto;
+  display: grid;
+  gap: 12px;
+}
+
+/* Option : resserrer un peu sur tablette/desktop */
+@media (min-width: 900px) {
+  .container { max-width: 960px; }
+}
+
+
+.card {
+  background:#11151e; border:1px solid #1f2633;
+  border-radius:14px; padding:12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.chip {
+  border:1px solid #1f2633; background:#11151e; color:#e8ecf3;
+  padding:10px 12px; border-radius:999px; white-space:nowrap;
+}
+.btn-ghost {
+  padding:8px 10px; border-radius:10px; background:transparent;
+  border:1px solid #1f2633; color:#e8ecf3;
+}
+.fab {
+  position: fixed; right: 16px; bottom: 16px;
+  width:56px; height:56px; border-radius:50%; border:none; cursor:pointer;
+  background:#7dd3fc; color:#0b0e12; font-size:28px; font-weight:900;
+  box-shadow: 0 14px 30px rgba(125,211,252,.35);
+}
+/* iPhone safe-area pour FAB */
+@supports(padding:max(0px)) {
+  .fab { bottom: max(16px, env(safe-area-inset-bottom)); right: max(16px, env(safe-area-inset-right)); }
+}
+
+
+/* ===== Sidebar (menu hamburger) compact ===== */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 78vw; max-width: 320px;
+  background: #11151e;
+  border-right: 1px solid #1f2633;
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform .22s ease;
+  display: grid;
+  grid-template-rows: auto 1fr;       /* header + contenu scrollable */
+  padding: 10px 8px;                  /* plus fin */
+}
+.sidebar.open { transform: translateX(0); }
+
+.sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 6px 8px 6px;
+  color: #e8ecf3; font-weight: 700; font-size: 14px;
+}
+
+.sidebar-content {
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+.sidebar-content::-webkit-scrollbar { width: 6px; }
+.sidebar-content::-webkit-scrollbar-thumb { background:#1f2633; border-radius: 8px; }
+
+/* Items compacts */
+.side-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+
+.side-item {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 44px;                   /* touch target accessible mais compact */
+  padding: 10px 12px;                 /* 🔥 réduit */
+  border-radius: 10px;
+  background: #0f1420;
+  border: 1px solid #1f2633;
+  color: #e8ecf3; text-decoration: none;
+  font-size: 14px; line-height: 1.2;
+}
+.side-item:hover { border-color: #2a3344; background: #131a29; }
+.side-item:active { transform: translateY(1px); }
+
+.side-divider {
+  height: 1px; background: #1f2633; margin: 6px 2px;
+}
+
+/* Icône (si tu en ajoutes plus tard) */
+.side-icon { width: 18px; height: 18px; opacity: .85; }
+
+/* Overlay derrière la sidebar */
+.overlay {
+  position: fixed; inset: 0; z-index: 49;
+  background: rgba(0,0,0,.5);
+}
+
+/* Safe area iOS */
+@supports(padding:max(0px)) {
+  .sidebar { padding-left: max(8px, env(safe-area-inset-left)); }
+}

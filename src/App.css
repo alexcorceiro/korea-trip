@@ -1,0 +1,106 @@
+/* Reset mobile-first */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body, #root { height: 100%; }
+:root { color-scheme: dark; }
+
+/* IMPORTANT: fond partout (html, body, root) */
+html, body, #root {
+  margin: 0;
+  background: #0b0e12;               /* même couleur que l’app */
+}
+
+/* Évite les liserés blancs liés aux arrondis/blur */
+body {
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safe areas iOS (encoches) */
+.safe {
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+/* Conteneur principal */
+.app {
+  min-height: 100dvh;
+  background: #0b0e12;
+  color: #e8ecf3;
+  padding-bottom: 90px;               /* place pour bottom nav / FAB */
+}
+
+/* Header sticky sans halo clair */
+.header {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(11,14,18,.94);     /* très proche du fond */
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #1f2633;
+}
+
+/* Carte générique */
+.card {
+  background: #11151e;
+  border: 1px solid #1f2633;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+
+/* Grille content */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+/* Boutons */
+.btn-ghost {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid #1f2633;
+  color: #e8ecf3;
+}
+
+/* Chip / actions rapides */
+.chip {
+  border: 1px solid #1f2633;
+  background: #11151e;
+  color: #e8ecf3;
+  padding: 10px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* FAB */
+.fab {
+  position: fixed; right: 16px; bottom: 84px;
+  width: 56px; height: 56px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: #7dd3fc; color: #0b0e12; font-size: 28px; font-weight: 900;
+  box-shadow: 0 14px 30px rgba(125,211,252,.35);
+}
+
+/* Menus volants (dropdown) */
+.popover {
+  position: absolute;
+  background: #11151e;
+  border: 1px solid #1f2633;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+.popover-item {
+  display: block; padding: 12px 14px; width: 100%;
+  text-align: left; color: #e8ecf3; background: transparent;
+  border: 0; border-bottom: 1px solid #1f2633; text-decoration: none;
+}
+.popover-item:last-child { border-bottom: 0; }
+
+/* Responsive fins (tablettes/desktop) */
+@media (min-width: 768px) {
+  .container { padding: 16px; gap: 16px; }
+}
